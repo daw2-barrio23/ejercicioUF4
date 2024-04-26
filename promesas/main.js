@@ -1,208 +1,198 @@
-  //Exercici 2.1 Async/await
 
-  async function pokeCards() {
-    const startTime = new Date().getTime(); // Tiempo de inicio
-    try {
-      const response = await fetch("https://pokeapi.co/api/v2/pokemon");
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      console.log(data);
-      const pokeLista = data.results.slice(0, 12); // Obtiene los primeros 12 pokémones
-      const pokemonArray = [];
-  
-      for (const pokemon of pokeLista) {
-        const pokemonResponse = await fetch(pokemon.url);
-        if (!pokemonResponse.ok) {
-          throw new Error("Network response for pokemon was not ok");
-        }
-        const pokemonData = await pokemonResponse.json();
-        const pokemonInfo = {
-          name: pokemonData.name,
-          id: pokemonData.id,
-          types: pokemonData.types.map((tipo) => tipo.type.name),
-          weight: pokemonData.weight,
-          height: pokemonData.height,
-        };
-        pokemonArray.push(pokemonInfo);
-      }
-  
-      // Mostrar los pokémons en pantalla
-      displayPokemon(pokemonArray);
-      
-    } catch (error) {
-      console.error("There was a problem with the fetch operation:", error);
-    } finally {
-      const endTime = new Date().getTime(); // Tiempo de finalización
-      const elapsedTime = endTime - startTime; // Calcular el tiempo transcurrido en milisegundos
-      const timeText = `TIEMPO: ${elapsedTime.toFixed(2)} milisegundos`; //Convierte el número a notación de punto fijo con digits decimales.
-      // Actualizar el texto del botón
-      const button = document.querySelector(".btn-primary"); // Puedes ajustar el selector según el botón correspondiente
-      button.textContent = `Exercici 2.1 ${timeText}`;
-    }
-  }
-  
-  function displayPokemon(pokemonArray) {
-  
-    pokemonArray.forEach((pokemon) => {
-      const cardColumn = document.createElement("div");
-      cardColumn.classList.add("col-md-3"); // Ajustar el tamaño de la columna según sea necesario
-      cardColumn.innerHTML = `
-              <div class="card shadow">
-                  <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${
-                    pokemon.id
-                  }.png" class="card-img-top" alt="${pokemon.name}">
-                  <div class="card-body">
-                      <h5 class="card-title">${pokemon.name}</h5>
-                      <div class="card-text">ID: ${pokemon.id}</div>
-                      <div class="card-text">Tipo: ${pokemon.types.join(
-                        ", "
-                      )}</div>
-                      <div class="card-text">Peso: ${pokemon.weight}</div>
-                      <div class="card-text">Altura: ${pokemon.height}</div>
-                  </div>
+
+//EJERCICIO 2.1
+// Función para generar las tarjetas
+function generarTarjetas(array) {
+  const contenedor = document.querySelector('.row'); // aqui pegaremos las tarjetas
+  array.forEach(pokemon => {
+      const card = document.createElement('div');
+      card.classList.add('col-md-2');
+      const cardHTML = `
+          <div class="card shadow">
+              <img src="${pokemon.imagen}" class="card-img-top" alt="${pokemon.nombre}">
+              <div class="card-body">
+                  <h5 class="card-title">${pokemon.nombre}</h5>
+                  <div class="card-text">ID: ${pokemon.id}</div>
+                  <div class="card-text">Tipo: ${pokemon.tipo}</div>
+                  <div class="card-text">Peso: ${pokemon.peso}</div>
+                  <div class="card-text">Altura: ${pokemon.altura}</div>
               </div>
-          `;
-      pokeCardsContainer.appendChild(cardColumn);
-    });
+          </div>
+      `;
+      card.innerHTML = cardHTML;
+      contenedor.appendChild(card);
+  });
+}
+
+// Función API de PokeAPI
+async function obtenerDatosPokemon() {
+  try {
+      const inicio = Date.now(); // Registrar el tiempo de inicio 
+      //solicitud a API para obtener los primeros 12 Pokémons
+      const response = await fetch('https://pokeapi.co/api/v2/pokemon?limit=12');
+      // Convertir la respuesta a formato JSON
+      const data = await response.json();
+      // Extraer la URL 
+      const pokemonUrls = data.results.map(pokemon => pokemon.url);
+      // almacenamos la informacion de los poekmons
+      const pokemonPromises = pokemonUrls.map(async url => {
+          const response = await fetch(url);
+          return response.json();
+      });
+      // Esperamos a todas las promesas
+      const pokemonInfos = await Promise.all(pokemonPromises);
+      // Calcular el tiempo transcurrido
+      const tiempoTranscurrido = Date.now() - inicio;
+      // Formatear la informacion de los Pokemons
+      const pokemonData = pokemonInfos.map(pokemonInfo => ({
+          id: pokemonInfo.id,
+          nombre: pokemonInfo.name,
+          imagen: pokemonInfo.sprites.other['official-artwork'].front_default,
+          tipo: pokemonInfo.types.map(type => type.type.name),
+          peso: pokemonInfo.weight,
+          altura: pokemonInfo.height
+      }));
+      // Devolver el array con la info de los pokemons y el tiempo transcurrido
+      return { pokemonData, tiempoTranscurrido };
+  } catch (error) {
+      console.error('Error al obtener los datos de los Pokémon:', error);
+      // en caso error devolvemos el array vacío y el teimpo será 0
+      return { pokemonData: [], tiempoTranscurrido: 0 };
   }
-  document.querySelector(".btn-primary").addEventListener("click", pokeCards);
-  
-  //Exercici 2.2 .then/.catch/.finally
-  
-  function fetchPokemon() {
-  
-    const startTime = new Date().getTime(); // Tiempo de inicio
-  
-    fetch("https://pokeapi.co/api/v2/pokemon")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
+}
+
+// Función para generar las tarjetas 
+async function generarTarjetasPokemon() {
+  console.log('Ejercicio 2.1')
+  try {
+      const { pokemonData, tiempoTranscurrido } = await obtenerDatosPokemon();
+
+      // Mostrar el tiempo transcurrido
+      const boton1 = document.querySelector('.boton1');
+      boton1.innerHTML = `<div><strong>Exercici 2.1</strong></div><div>TIEMPO: ${tiempoTranscurrido} milisegundos</div>`;
+
+      // Mostramos los cards de los pokemons
+      const pokemonsContainer = document.getElementById('pokemonsContainer');
+      pokemonsContainer.classList.remove('hidden');
+
+      console.log('Datos de los primeros 12 Pokémon:', pokemonData);
+
+      // se generan los cards
+      generarTarjetas(pokemonData);
+
+  } catch (error) {
+      console.error('Error al generar los cards: ', error);
+  }
+}
+
+
+
+
+//EJERCICIO 2.2
+// Función API de PokeAPI utilizando then/catch
+function obtenerDatosPokemonThenCatch() {
+  console.log('Ejercicio 2.2')
+  const inicio = Date.now(); // Registrar el tiempo de inicio 
+  fetch('https://pokeapi.co/api/v2/pokemon?limit=12')
+      .then(response => {
+          return response.json();
       })
-      .then((data) => {
-        const pokeLista = data.results.slice(0, 12); // Obtiene los primeros 12 pokémones
-        const pokemonArray = [];
-        console.log(pokemonArray);
-        // Encadenar las peticiones utilizando then encadenados
-        let chain = null;
-        pokeLista.forEach((pokemon) => {
-          if (chain === null) {
-            chain = fetch(pokemon.url)
-              .then((pokemonResponse) => {
-                if (!pokemonResponse.ok) {
-                  throw new Error("Network response for pokemon was not ok");
-                }
-                return pokemonResponse.json();
-              })
-              .then((pokemonData) => {
-                const pokemonInfo = {
-                  name: pokemonData.name,
-                  id: pokemonData.id,
-                  types: pokemonData.types.map((tipo) => tipo.type.name),
-                  weight: pokemonData.weight,
-                  height: pokemonData.height,
-                };
-                pokemonArray.push(pokemonInfo);
-              });
-          } else {
-            chain = chain.then(() => {
-              return fetch(pokemon.url)
-                .then((pokemonResponse) => {
-                  if (!pokemonResponse.ok) {
-                    throw new Error("Network response for pokemon was not ok");
-                  }
-                  return pokemonResponse.json();
-                })
-                .then((pokemonData) => {
-                  const pokemonInfo = {
-                    name: pokemonData.name,
-                    id: pokemonData.id,
-                    types: pokemonData.types.map((tipo) => tipo.type.name),
-                    weight: pokemonData.weight,
-                    height: pokemonData.height,
-                  };
-                  pokemonArray.push(pokemonInfo);
-                });
-            });
+      .then(data => {
+          const pokemonUrls = data.results.map(pokemon => pokemon.url);
+          const pokemonPromises = pokemonUrls.map(url => fetch(url).then(response => response.json()));
+          return Promise.all(pokemonPromises);
+      })
+      .then(pokemonInfos => {
+          const tiempoTranscurrido = Date.now() - inicio;
+          const pokemonData = pokemonInfos.map(pokemonInfo => ({
+              id: pokemonInfo.id,
+              nombre: pokemonInfo.name,
+              imagen: pokemonInfo.sprites.other['official-artwork'].front_default,
+              tipo: pokemonInfo.types.map(type => type.type.name),
+              peso: pokemonInfo.weight,
+              altura: pokemonInfo.height
+          }));
+          return { pokemonData, tiempoTranscurrido };
+      })
+      .then(({ pokemonData, tiempoTranscurrido }) => {
+          const boton2 = document.querySelector('#boton2');
+          boton2.innerHTML = `<div><strong>Exercici 2.2</strong></div><div>TIEMPO: ${tiempoTranscurrido} milisegundos</div>`;
+          const pokemonsContainer = document.getElementById('pokemonsContainer');
+          pokemonsContainer.classList.remove('hidden');
+          generarTarjetas(pokemonData);
+          console.log('Datos de los primeros 12 Pokémon:', pokemonData);
+      })
+      .catch(error => {
+          console.error('Error al obtener los datos de los Pokémon:', error);
+      });
+}
+
+
+
+
+//Ejercicio 2.3
+function obtenerDatosPokemonFetchAll() {
+  const inicio = Date.now(); // Tiempo de inicio
+  // Realizar la solicitud a la API para obtener los pokemons
+  fetch('https://pokeapi.co/api/v2/pokemon?limit=12')
+      .then(response => {
+          if (!response.ok) {
+              throw new Error('No se pudo obtener la información de los Pokémon');
           }
-        });
-  
-        return chain.then(() => pokemonArray);
+          return response.json();
       })
-      .then((pokemonArray) => {
-        displayPokemon(pokemonArray);
+      .then(data => {
+          // Extraer la URL 
+          const pokemonUrls = data.results.map(pokemon => pokemon.url);
+          // Realizar todas las solicitudes con el map
+          return Promise.all(pokemonUrls.map(url => fetch(url)));
       })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+      .then(pokemonResponses => {
+      // Obtener la info
+      return Promise.all(pokemonResponses.map(response => response.json()));
       })
-      .finally(() => {
-        const endTime = new Date().getTime(); // Tiempo de finalización
-        const elapsedTime = endTime - startTime; // Calcular el tiempo transcurrido en milisegundos
-        const timeText = `TIEMPO: ${elapsedTime.toFixed(2)} milisegundos`; //Convierte el número a notación de punto fijo con digits decimales.
-        // Actualizar el texto del botón
-        const button = document.querySelector(".btn-success"); // Puedes ajustar el selector según el botón correspondiente
-        button.textContent = `Exercici 2.2 ${timeText}`;
+      .then(pokemonInfos => {
+          // Calcular el tiempo transcurrido
+          const tiempoTranscurrido = Date.now() - inicio;
+          // Formatear la info
+          const pokemonData = pokemonInfos.map(pokemonInfo => ({
+              id: pokemonInfo.id,
+              nombre: pokemonInfo.name,
+              imagen: pokemonInfo.sprites.other['official-artwork'].front_default,
+              tipo: pokemonInfo.types.map(type => type.type.name),
+              peso: pokemonInfo.weight,
+              altura: pokemonInfo.height
+          }));
+          // Mostrar el tiempo transcurrido
+          const boton3 = document.querySelector('#boton3');
+          boton3.innerHTML = `<div><strong>Exercici 2.3</strong></div><div>TIEMPO: ${tiempoTranscurrido} milisegundos</div>`;
+          // Mostrar los cards de los pokemons
+          const pokemonsContainer = document.getElementById('pokemonsContainer');
+          pokemonsContainer.classList.remove('hidden');
+          // Generar las tarjetas de los pokemons
+          generarTarjetas(pokemonData);
+          console.log('Datos de los 12 Pokemons:', pokemonData);
+      })
+      .catch(error => {
+          console.error('Error al obtener los datos', error);
       });
-  }
-  
-  document.querySelector(".btn-success").addEventListener("click", fetchPokemon);
-  
-  // Exercici 2.3 Promise.All
-  function fetchPokeballParade() {
-    const startTime = new Date().getTime(); // Tiempo de inicio
-  
-    fetch("https://pokeapi.co/api/v2/pokemon")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        const pokeLista = data.results.slice(0, 12); // Obtiene los primeros 12 pokémones
-        const pokemonPromises = [];
-  
-        // Crear un array de promesas para todas las peticiones de Pokémon
-        pokeLista.forEach((pokemon) => {
-          pokemonPromises.push(fetch(pokemon.url)
-            .then((pokemonResponse) => {
-              if (!pokemonResponse.ok) {
-                throw new Error("Network response for pokemon was not ok");
-              }
-              return pokemonResponse.json();
-            })
-            .then((pokemonData) => ({
-              name: pokemonData.name,
-              id: pokemonData.id,
-              types: pokemonData.types.map((tipo) => tipo.type.name),
-              weight: pokemonData.weight,
-              height: pokemonData.height,
-            }))
-          );
-        });
-  
-        // Esperar a que todas las promesas se resuelvan
-        return Promise.all(pokemonPromises);
-      })
-      .then((pokemonArray) => {
-        // Mostrar los Pokémon en pantalla una vez se han resuelto todas las peticiones
-        displayPokemon(pokemonArray);
-  
-        // Calcular el tiempo total transcurrido
-        const endTime = new Date().getTime();
-        const elapsedTime = endTime - startTime;
-        const timeText = `TIEMPO: ${elapsedTime.toFixed(2)} milisegundos`;
-  
-        // Actualizar el texto del botón
-        const button = document.querySelector(".btn-warning");
-        button.textContent = `Exercici 2.3 ${timeText}`;
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
-  }
-  
-  document.querySelector(".btn-warning").addEventListener("click", fetchPokeballParade);
+}
+
+//Eventos de los clicks para mostrar todo
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('Hola desde el main')
+  // Evento click para el boton1
+  document.querySelector('#boton1').addEventListener('click', () => {
+      //Se generaran los cards cuando se haga click
+      generarTarjetasPokemon();
+  });
+  // Evento click para el boton2
+  document.querySelector('#boton2').addEventListener('click', () => {
+      obtenerDatosPokemonThenCatch();
+  });
+  //Evento click para el boton3
+  document.querySelector('#boton3').addEventListener('click', () => {
+      obtenerDatosPokemonFetchAll();
+  });
+});
