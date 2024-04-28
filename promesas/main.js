@@ -1,6 +1,6 @@
  //Exercici 2.1 Async/await
  
-  async function pokeCards() {
+  async function pokeCartas() {
     const inicioTiempo = new Date().getTime();
     try {
       const response = await fetch("https://pokeapi.co/api/v2/pokemon");
@@ -44,7 +44,7 @@
   }
   
   function displayPokemon(pokemonArray) {
-    const pokeCardsContainer = document.getElementById("pokeCards");
+    const pokeCartasContainer = document.getElementById("pokeCartas");
   
     pokemonArray.forEach((pokemon) => {
       const cardColumn = document.createElement("div");
@@ -65,10 +65,10 @@
                   </div>
               </div>
           `;
-      pokeCardsContainer.appendChild(cardColumn);
+      pokeCartasContainer.appendChild(cardColumn);
     });
   }
-  document.querySelector(".btn-primary").addEventListener("click", pokeCards);
+  document.querySelector(".btn-primary").addEventListener("click", pokeCartas);
   
   //Exercici 2.2 .then/.catch/.finally
   
